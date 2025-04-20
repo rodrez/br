@@ -6,7 +6,7 @@ import Image from "next/image";
 
 export default function Header() {
   return (
-    <header className="sticky z-50 w-full backdrop-blur-sm top-0 py-2">
+    <header className="sticky z-50 w-full top-0 py-2">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="relative flex h-14 items-center justify-between gap-3 rounded-2xl bg-gray-900/90 px-3 backdrop-blur-sm">
           {/* Site branding */}
