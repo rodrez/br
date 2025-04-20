@@ -31,6 +31,107 @@ export const posts = createTable(
 	],
 );
 
+// Categories for rankings (e.g., Electronics, Fashion, Food)
+export const categories = createTable(
+	"category",
+	(d) => ({
+		id: d.integer({ mode: "number" }).primaryKey({ autoIncrement: true }),
+		name: d.text({ length: 256 }).notNull(),
+		slug: d.text({ length: 256 }).notNull(),
+		description: d.text(),
+		imageUrl: d.text(),
+		createdAt: d
+			.integer({ mode: "timestamp" })
+			.default(sql`(unixepoch())`)
+			.notNull(),
+		updatedAt: d.integer({ mode: "timestamp" }).$onUpdate(() => new Date()),
+	}),
+	(t) => [
+		index("category_name_idx").on(t.name),
+		index("category_slug_idx").on(t.slug),
+	],
+);
+
+// Brands that can be ranked
+export const brands = createTable(
+	"brand",
+	(d) => ({
+		id: d.integer({ mode: "number" }).primaryKey({ autoIncrement: true }),
+		name: d.text({ length: 256 }).notNull(),
+		slug: d.text({ length: 256 }).notNull(),
+		description: d.text(),
+		logoUrl: d.text(),
+		websiteUrl: d.text(),
+		createdAt: d
+			.integer({ mode: "timestamp" })
+			.default(sql`(unixepoch())`)
+			.notNull(),
+		updatedAt: d.integer({ mode: "timestamp" }).$onUpdate(() => new Date()),
+	}),
+	(t) => [
+		index("brand_name_idx").on(t.name),
+		index("brand_slug_idx").on(t.slug),
+	],
+);
+
+// Rankings which connect brands to categories with a rank and score
+export const rankings = createTable(
+	"ranking",
+	(d) => ({
+		id: d.integer({ mode: "number" }).primaryKey({ autoIncrement: true }),
+		categoryId: d
+			.integer({ mode: "number" })
+			.notNull()
+			.references(() => categories.id),
+		brandId: d
+			.integer({ mode: "number" })
+			.notNull()
+			.references(() => brands.id),
+		rank: d.integer({ mode: "number" }).notNull(),
+		score: d.real().notNull(),
+		review: d.text(),
+		createdById: d
+			.text({ length: 255 })
+			.notNull()
+			.references(() => users.id),
+		createdAt: d
+			.integer({ mode: "timestamp" })
+			.default(sql`(unixepoch())`)
+			.notNull(),
+		updatedAt: d.integer({ mode: "timestamp" }).$onUpdate(() => new Date()),
+	}),
+	(t) => [
+		index("ranking_category_idx").on(t.categoryId),
+		index("ranking_brand_idx").on(t.brandId),
+		index("ranking_rank_idx").on(t.rank),
+		index("ranking_created_by_idx").on(t.createdById),
+	],
+);
+
+// Define relations
+export const categoriesRelations = relations(categories, ({ many }) => ({
+	rankings: many(rankings),
+}));
+
+export const brandsRelations = relations(brands, ({ many }) => ({
+	rankings: many(rankings),
+}));
+
+export const rankingsRelations = relations(rankings, ({ one }) => ({
+	category: one(categories, {
+		fields: [rankings.categoryId],
+		references: [categories.id],
+	}),
+	brand: one(brands, {
+		fields: [rankings.brandId],
+		references: [brands.id],
+	}),
+	createdBy: one(users, {
+		fields: [rankings.createdById],
+		references: [users.id],
+	}),
+}));
+
 export const users = createTable("user", (d) => ({
 	id: d
 		.text({ length: 255 })
@@ -45,6 +146,7 @@ export const users = createTable("user", (d) => ({
 
 export const usersRelations = relations(users, ({ many }) => ({
 	accounts: many(accounts),
+	rankings: many(rankings),
 }));
 
 export const accounts = createTable(
